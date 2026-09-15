@@ -1,14 +1,22 @@
 package com.example.bookshelf.model;
 
-import java.util.UUID;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
+@Entity
 public class Book {
-    private final String id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
     private String title;
     private String author;
 
+    protected Book() {
+    }
+
     public Book(String title, String author) {
-        this.id = UUID.randomUUID().toString();
         this.title = title;
         this.author = author;
     }

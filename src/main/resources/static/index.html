@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookshelf | Library</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Personal library</p>
+        <h1>Bookshelf</h1>
+        <p class="intro">Keep the books you own close at hand.</p>
+      </div>
+      <div class="api-mark" aria-label="API online status">
+        <span class="status-dot"></span>
+        <span>API connected</span>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="Bookshelf workspace">
+      <aside class="add-panel">
+        <p class="eyebrow">Add a title</p>
+        <h2>Grow your shelf</h2>
+        <form id="book-form">
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" placeholder="e.g. Dune" required>
+
+          <label for="author">Author</label>
+          <input id="author" name="author" type="text" placeholder="e.g. Frank Herbert" required>
+
+          <button type="submit">Add to bookshelf <span aria-hidden="true">+</span></button>
+          <p id="form-message" class="form-message" role="status"></p>
+        </form>
+      </aside>
+
+      <section class="shelf-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your collection</p>
+            <h2>All books <span id="book-count" class="count">0</span></h2>
+          </div>
+          <button id="refresh-button" class="refresh-button" type="button" title="Refresh books">Refresh</button>
+        </div>
+        <div id="bookshelf" class="bookshelf" aria-live="polite">
+          <p class="loading">Loading your bookshelf...</p>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

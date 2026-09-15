@@ -3,6 +3,12 @@
 A minimal Java/Spring Boot prototype (US-101: add + view books) set up as
 the starting point for the capstone's 8-step Agentic SDLC exercise.
 
+Books are stored in a local file-based H2 database under `data/` and remain
+available after the application restarts.
+
+Open `http://localhost:8080/` in a browser to use the bookshelf UI. It lists
+saved books and provides a form for calling the `POST /books` API.
+
 ## Run it
 
 ```bash

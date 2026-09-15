@@ -11,6 +11,7 @@ As a reader, I want to add a book and view my bookshelf via API, so that I can k
 - Responses use JSON
 
 ### Non-functional requirements
-- No persistence is required for the prototype; in-memory storage is acceptable.
+- Books must be persisted locally and remain available after an application restart.
+- The prototype may use an embedded file-based database; no external database server is required.
 - Single-user access is sufficient; authentication is not required at this stage.
 
