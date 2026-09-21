@@ -34,17 +34,26 @@ new datastore, or a messaging layer.
   - Adds optional `title`/`author` query params on the existing `GET /books`.
   - Delegates all validation and persistence decisions to `BookService`;
     contains no business logic itself.
+  - `PUT /books/{id}` accepts a `Book` body but only reads its `author`
+    field — any `title` present in the body is ignored, since title is not
+    editable via this endpoint (design review #1).
 
 - **`BookService`** (new)
   - `create(title, author)` — validates required fields and max length
-    (255), checks for a case-insensitive duplicate on `title` + `author`,
-    then saves.
-  - `findAll(titleFilter, authorFilter)` — builds the filtered query
-    (both, either, or neither param present).
-  - `updateAuthor(id, author)` — validates the new `author`, loads the
-    existing book or throws not-found, updates and saves.
+    (255) via `validateField`, checks for a case-insensitive duplicate on
+    `title` + `author`, then saves.
+  - `findAll(titleFilter, authorFilter)` — builds the filtered query.
+    A blank/empty `titleFilter` or `authorFilter` is treated the same as
+    an absent one (no filter applied for that field), so `?title=` never
+    matches on an empty string (design review #4).
+  - `updateAuthor(id, author)` — validates the new `author` via
+    `validateField`, loads the existing book or throws not-found, updates
+    and saves. Ignores any `title` on the incoming body.
   - `delete(id)` — loads the existing book or throws not-found, then
     deletes.
+  - `validateField(name, value)` (private helper) — the single shared
+    check for "required, max 255 chars", used by both `create` and
+    `updateAuthor` so the two paths can't drift (design review #5).
   - This is the single place validation/duplicate/not-found rules live, so
     each rule can be unit-tested without HTTP.
 
@@ -68,6 +77,8 @@ new datastore, or a messaging layer.
   - Returns a small JSON body, e.g. `{"message": "no book present"}`, via a
     new `ErrorResponse` record — keeps error shape consistent across all
     endpoints instead of each controller method building its own response.
+  - `message` is the one documented response key for errors (design
+    review #6); there is no separate `error` field.
 
 ### Data flow
 
@@ -85,4 +96,11 @@ new datastore, or a messaging layer.
 
 No changes to the storage technology, endpoint base path, or deployment
 model are needed for US-102.
+
+### Design review
+
+See `docs/design-review.md` (2026-09-21) for the full list of risks
+considered. `Book` continues to be used directly as the request/response
+body (no separate DTO) and the check-then-save duplicate check is not
+atomic — both accepted as reasonable for this single-user prototype.
 
