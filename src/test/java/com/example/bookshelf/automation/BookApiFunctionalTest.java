@@ -48,7 +48,7 @@ class BookApiFunctionalTest extends AbstractTestNGSpringContextTests {
     void setUpClass() {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new", "--disable-gpu", "--window-size=1280,800");
+        options.addArguments("--window-size=1280,800");
         driver = new ChromeDriver(options);
     }
 
