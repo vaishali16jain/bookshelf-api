@@ -17,7 +17,7 @@ As a reader, I want to add a book and view my bookshelf via API, so that I can k
 
 ## US-102 — Filter, update, and delete books
 
-_JIRA reference: [SCRUM-1](https://epam-testing.atlassian.net/browse/SCRUM-1)_
+_JIRA reference: [SCRUM-2](https://epam-testing.atlassian.net/browse/SCRUM-2)_
 
 As a reader, I want to filter my bookshelf, update a book's author, and
 remove a book, so that I can keep my bookshelf accurate and find books
