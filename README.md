@@ -23,6 +23,19 @@ curl -X POST localhost:8080/books -H "Content-Type: application/json" \
 curl localhost:8080/books
 ```
 
+## Run the tests
+
+```bash
+# All tests (unit + integration + functional/UI)
+mvn test
+
+# Integration tests only (BookControllerTest, MockMvc)
+mvn test -Dtest=BookControllerTest
+
+# Functional/automation tests only (BookApiFunctionalTest, REST Assured + Selenium, TestNG)
+mvn test -Dtest=BookApiFunctionalTest
+```
+
 ## What's already here
 - `src/` — the prototype implementation of US-101 (intentionally minimal,
   with a known validation gap left in on purpose — see `docs/design-review.md`)
