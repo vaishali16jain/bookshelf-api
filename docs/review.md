@@ -27,3 +27,64 @@ tests, all green.
 Outstanding, non-blocking follow-up: bump `spring-boot-starter-parent` to
 the latest `3.3.x` patch and run an automated dependency vulnerability scan
 before merging to `main`.
+
+## 2026-09-21 — Verification (Step 7)
+
+### Code verification — acceptance criteria vs. tests
+
+Every acceptance criterion and edge case in `docs/requirements.md` § US-102
+now has a corresponding test. Newly added during this verification pass:
+`getAllBooksWithNoFilterReturnsEverything`, `filterBooksByAuthorOnly`,
+`updateBookIgnoresTitleInRequestBody`, `updateBookWithBlankAuthorReturns400`,
+`createBookWithOversizedTitleReturns400` (all in `BookControllerTest`).
+
+| Requirement | Test | Result |
+|---|---|---|
+| `GET /books` with no params returns all books | `BookControllerTest.getAllBooksWithNoFilterReturnsEverything` | Pass |
+| `GET ?title=` partial, case-insensitive | `BookControllerTest.filterBooksByTitleAndAuthor` | Pass |
+| `GET ?author=` partial, case-insensitive | `BookControllerTest.filterBooksByAuthorOnly` | Pass |
+| `GET ?title=&author=` combined (AND) | `BookApiFunctionalTest.fullLifecycle_createFilterUpdateDelete` (REST Assured) | Pass |
+| No match → `200` `[]` | `BookControllerTest.filterBooksWithNoMatchReturnsEmptyArray` | Pass |
+| `PUT` updates `author`, returns `200` | `BookControllerTest.updateBookAuthorReturns200` | Pass |
+| `PUT` ignores `title` in body | `BookControllerTest.updateBookIgnoresTitleInRequestBody` | Pass |
+| `PUT` missing id → `404` `"no book present"` | `BookControllerTest.updateMissingBookReturns404` | Pass |
+| `PUT` blank/invalid `author` → `400` | `BookControllerTest.updateBookWithBlankAuthorReturns400` | Pass |
+| `DELETE` → `204` | `BookControllerTest.deleteBookReturns204` | Pass |
+| `DELETE` missing id → `404` `"no book present"` | `BookControllerTest.deleteMissingBookReturns404` | Pass |
+| `POST` required/max-255 validation → `400` | `BookControllerTest.createInvalidBookReturns400`, `createBookWithOversizedTitleReturns400` | Pass |
+| `POST` duplicate (case-insensitive) → `400` `"record already exist"` | `BookControllerTest.createDuplicateBookReturns400` | Pass |
+| Malformed JSON body → `400` (contract consistency) | `BookControllerTest.createWithMalformedJsonReturns400` | Pass |
+
+Full suite executed via `mvn test`: **36 tests, 0 failures, 0 errors**
+(29 JUnit — `BookControllerTest` x15, `BookServiceTest` x14 — plus 7 TestNG
+in `BookApiFunctionalTest`, including the Selenium UI test).
+
+### Architecture cross-check (`docs/architecture.md` vs. code)
+
+| Item | Architecture doc says | Code reality | Result |
+|---|---|---|---|
+| Routes | `GET/POST/PUT/DELETE /books[, /{id}]` | Matches exactly in `BookController` | Pass |
+| `BookService.validateField` | Documented as `validateField(name, value)` (two params) | Actual signature is `validateField(String value)` — single param, no field name | **Fail** — doc/code drift, cosmetic only (behavior is correct) |
+| `GlobalExceptionHandler` | Documents 3 handlers (`BookNotFoundException`, `InvalidBookException`, `DuplicateBookException`) | Has a 4th handler, `HttpMessageNotReadableException`, added during the code review fix | **Fail** — doc is stale, missing the malformed-JSON handler added after `architecture.md` was last written |
+
+### Documentation content-quality check
+
+| Document | Check | Result |
+|---|---|---|
+| `docs/requirements.md` | Every acceptance criterion is concrete/testable (no vague terms); JIRA link resolves to `SCRUM-2` | Pass |
+| `docs/architecture.md` | Component list vs. code | **Fail** — 2 stale items (see cross-check above) |
+| `docs/design-review.md` | All 6 findings have a recorded decision and are reflected in the code | Pass |
+| `docs/impl-plan.md` | Task #6 references `validateField(name, value)` — same drift as architecture.md | **Fail** — same root cause |
+| `docs/review.md` (this file) | Reflects the actual fix applied (`HttpMessageNotReadableException` handler) | Pass |
+
+### Outcome
+
+Code verification: **all pass** (36/36 tests green, every requirement traced
+to a test). Documentation verification: **2 stale references found** —
+`docs/architecture.md` and `docs/impl-plan.md` both describe
+`validateField` with a `name` parameter that doesn't exist in code, and
+`docs/architecture.md`'s `GlobalExceptionHandler` section is missing the
+`HttpMessageNotReadableException` handler added during the Step 6 review.
+Per the QA role, these are reported here for the human/implementation step
+to correct, not fixed in this pass.
+
