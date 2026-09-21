@@ -65,6 +65,15 @@ class BookControllerTest {
     }
 
     @Test
+    void createWithMalformedJsonReturns400() throws Exception {
+        mockMvc.perform(post("/books")
+                        .contentType("application/json")
+                        .content("{ not valid json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("please check the request payload"));
+    }
+
+    @Test
     void filterBooksByTitleAndAuthor() throws Exception {
         mockMvc.perform(post("/books").contentType("application/json")
                 .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
