@@ -64,6 +64,33 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("please check the request payload"));
     }
 
+        @Test
+        void createBookWithBlankAuthorReturns400() throws Exception {
+                mockMvc.perform(post("/books")
+                                                .contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", " "))))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("please check the request payload"));
+        }
+
+        @Test
+        void createBookWithMissingTitleReturns400() throws Exception {
+                mockMvc.perform(post("/books")
+                                                .contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("author", "Frank Herbert"))))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("please check the request payload"));
+        }
+
+        @Test
+        void createBookWithMissingAuthorReturns400() throws Exception {
+                mockMvc.perform(post("/books")
+                                                .contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune"))))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("please check the request payload"));
+        }
+
     @Test
     void createBookWithOversizedTitleReturns400() throws Exception {
         mockMvc.perform(post("/books")
@@ -72,6 +99,15 @@ class BookControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("please check the request payload"));
     }
+
+        @Test
+        void createBookWithOversizedAuthorReturns400() throws Exception {
+                mockMvc.perform(post("/books")
+                                                .contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "a".repeat(256)))))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("please check the request payload"));
+        }
 
     @Test
     void createWithMalformedJsonReturns400() throws Exception {
@@ -95,7 +131,7 @@ class BookControllerTest {
     }
 
     @Test
-    void filterBooksByTitleAndAuthor() throws Exception {
+    void filterBooksByTitleOnly() throws Exception {
         mockMvc.perform(post("/books").contentType("application/json")
                 .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
         mockMvc.perform(post("/books").contentType("application/json")
@@ -105,6 +141,32 @@ class BookControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].title").value("Dune"));
+    }
+
+    @Test
+    void filterBooksByTitleAndAuthorUsesAndCondition() throws Exception {
+        mockMvc.perform(post("/books").contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
+        mockMvc.perform(post("/books").contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("title", "Dune Messiah", "author", "Brian Herbert"))));
+
+        mockMvc.perform(get("/books").param("title", "dune").param("author", "frank"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Dune"))
+                .andExpect(jsonPath("$[0].author").value("Frank Herbert"));
+    }
+
+    @Test
+    void emptyFiltersAreTreatedAsAbsent() throws Exception {
+        mockMvc.perform(post("/books").contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
+        mockMvc.perform(post("/books").contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("title", "1984", "author", "George Orwell"))));
+
+        mockMvc.perform(get("/books").param("title", "").param("author", " "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test
@@ -170,6 +232,34 @@ class BookControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("please check the request payload"));
     }
+
+        @Test
+        void updateBookWithOversizedAuthorReturns400() throws Exception {
+                String response = mockMvc.perform(post("/books").contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
+                                .andReturn().getResponse().getContentAsString();
+                String id = objectMapper.readTree(response).get("id").asText();
+
+                mockMvc.perform(put("/books/{id}", id)
+                                                .contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("author", "a".repeat(256)))))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("please check the request payload"));
+        }
+
+        @Test
+        void updateBookWithMissingAuthorReturns400() throws Exception {
+                String response = mockMvc.perform(post("/books").contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
+                                .andReturn().getResponse().getContentAsString();
+                String id = objectMapper.readTree(response).get("id").asText();
+
+                mockMvc.perform(put("/books/{id}", id)
+                                                .contentType("application/json")
+                                                .content(objectMapper.writeValueAsString(Map.of())))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("please check the request payload"));
+        }
 
     @Test
     void updateMissingBookReturns404() throws Exception {

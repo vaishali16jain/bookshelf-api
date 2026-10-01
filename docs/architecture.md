@@ -51,7 +51,7 @@ new datastore, or a messaging layer.
     and saves. Ignores any `title` on the incoming body.
   - `delete(id)` — loads the existing book or throws not-found, then
     deletes.
-  - `validateField(name, value)` (private helper) — the single shared
+  - `validateField(value)` (private helper) — the single shared
     check for "required, max 255 chars", used by both `create` and
     `updateAuthor` so the two paths can't drift (design review #5).
   - This is the single place validation/duplicate/not-found rules live, so
@@ -74,6 +74,9 @@ new datastore, or a messaging layer.
 - **`GlobalExceptionHandler`** (new, `@RestControllerAdvice`)
   - Maps `BookNotFoundException` → `404`, `InvalidBookException` → `400`,
     `DuplicateBookException` → `400`.
+  - Maps Spring's `HttpMessageNotReadableException` → `400` with
+    `"please check the request payload"`, preserving the same contract for
+    malformed or unreadable JSON that cannot reach `BookService` validation.
   - Returns a small JSON body, e.g. `{"message": "no book present"}`, via a
     new `ErrorResponse` record — keeps error shape consistent across all
     endpoints instead of each controller method building its own response.
@@ -99,7 +102,7 @@ model are needed for US-102.
 
 ### Design review
 
-See `docs/design-review.md` (2026-09-21) for the full list of risks
+See `docs/design-review.md` (2026-09-22) for the full list of risks
 considered. `Book` continues to be used directly as the request/response
 body (no separate DTO) and the check-then-save duplicate check is not
 atomic — both accepted as reasonable for this single-user prototype.

@@ -57,6 +57,17 @@ class BookServiceTest {
     }
 
     @Test
+    void createAcceptsFieldsAtMaximumLength() {
+        String maximumLength = "a".repeat(255);
+        when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Book result = bookService.create(maximumLength, maximumLength);
+
+        assertThat(result.getTitle()).hasSize(255);
+        assertThat(result.getAuthor()).hasSize(255);
+    }
+
+    @Test
     void createThrowsDuplicateBookExceptionWhenAlreadyExists() {
         when(bookRepository.existsByTitleIgnoreCaseAndAuthorIgnoreCase("Dune", "Frank Herbert")).thenReturn(true);
 
@@ -120,6 +131,13 @@ class BookServiceTest {
     void updateAuthorThrowsInvalidWhenAuthorBlank() {
         assertThatThrownBy(() -> bookService.updateAuthor("id-1", ""))
                 .isInstanceOf(InvalidBookException.class);
+    }
+
+    @Test
+    void updateAuthorThrowsInvalidWhenAuthorTooLong() {
+        assertThatThrownBy(() -> bookService.updateAuthor("id-1", "a".repeat(256)))
+                .isInstanceOf(InvalidBookException.class)
+                .hasMessage("please check the request payload");
     }
 
     @Test
