@@ -1,290 +1,433 @@
 package com.example.bookshelf.controller;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import com.example.bookshelf.repository.BookRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Map;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class BookControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private BookRepository bookRepository;
+  @Autowired private BookRepository bookRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+  @Autowired private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        bookRepository.deleteAll();
-    }
+  @BeforeEach
+  void setUp() {
+    bookRepository.deleteAll();
+  }
 
-    @Test
-    void createBookReturns201() throws Exception {
-        mockMvc.perform(post("/books")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("Dune"))
-                .andExpect(jsonPath("$.author").value("Frank Herbert"));
-    }
-
-    @Test
-    void createDuplicateBookReturns400() throws Exception {
-        mockMvc.perform(post("/books")
+  @Test
+  void createBookReturns201() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
                 .contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("title", "Dune", "author", "Frank Herbert"))))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.title").value("Dune"))
+        .andExpect(jsonPath("$.author").value("Frank Herbert"));
+  }
 
-        mockMvc.perform(post("/books")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "dune", "author", "frank herbert"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("record already exist"));
-    }
+  @Test
+  void createDuplicateBookReturns400() throws Exception {
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune", "author", "Frank Herbert"))));
 
-    @Test
-    void createInvalidBookReturns400() throws Exception {
-        mockMvc.perform(post("/books")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "", "author", "Frank Herbert"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("please check the request payload"));
-    }
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("title", "dune", "author", "frank herbert"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("record already exist"));
+  }
 
-        @Test
-        void createBookWithBlankAuthorReturns400() throws Exception {
-                mockMvc.perform(post("/books")
-                                                .contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", " "))))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").value("please check the request payload"));
-        }
+  @Test
+  void createInvalidBookReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("title", "", "author", "Frank Herbert"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-        @Test
-        void createBookWithMissingTitleReturns400() throws Exception {
-                mockMvc.perform(post("/books")
-                                                .contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("author", "Frank Herbert"))))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").value("please check the request payload"));
-        }
+  @Test
+  void createBookWithBlankAuthorReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", " "))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-        @Test
-        void createBookWithMissingAuthorReturns400() throws Exception {
-                mockMvc.perform(post("/books")
-                                                .contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune"))))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").value("please check the request payload"));
-        }
+  @Test
+  void createBookWithMissingTitleReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("author", "Frank Herbert"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-    @Test
-    void createBookWithOversizedTitleReturns400() throws Exception {
-        mockMvc.perform(post("/books")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "a".repeat(256), "author", "Frank Herbert"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("please check the request payload"));
-    }
+  @Test
+  void createBookWithMissingAuthorReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("title", "Dune"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-        @Test
-        void createBookWithOversizedAuthorReturns400() throws Exception {
-                mockMvc.perform(post("/books")
-                                                .contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "a".repeat(256)))))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").value("please check the request payload"));
-        }
+  @Test
+  void createBookWithOversizedTitleReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("title", "a".repeat(256), "author", "Frank Herbert"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-    @Test
-    void createWithMalformedJsonReturns400() throws Exception {
-        mockMvc.perform(post("/books")
-                        .contentType("application/json")
-                        .content("{ not valid json"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("please check the request payload"));
-    }
+  @Test
+  void createBookWithOversizedAuthorReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/books")
+                .contentType("application/json")
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("title", "Dune", "author", "a".repeat(256)))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-    @Test
-    void getAllBooksWithNoFilterReturnsEverything() throws Exception {
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "1984", "author", "George Orwell"))));
+  @Test
+  void createWithMalformedJsonReturns400() throws Exception {
+    mockMvc
+        .perform(post("/books").contentType("application/json").content("{ not valid json"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-        mockMvc.perform(get("/books"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
-    }
+  @Test
+  void getAllBooksWithNoFilterReturnsEverything() throws Exception {
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune", "author", "Frank Herbert"))));
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "1984", "author", "George Orwell"))));
 
-    @Test
-    void filterBooksByTitleOnly() throws Exception {
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "1984", "author", "George Orwell"))));
+    mockMvc
+        .perform(get("/books"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2));
+  }
 
-        mockMvc.perform(get("/books").param("title", "dun"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("Dune"));
-    }
+  @Test
+  void filterBooksByTitleOnly() throws Exception {
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune", "author", "Frank Herbert"))));
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "1984", "author", "George Orwell"))));
 
-    @Test
-    void filterBooksByTitleAndAuthorUsesAndCondition() throws Exception {
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune Messiah", "author", "Brian Herbert"))));
+    mockMvc
+        .perform(get("/books").param("title", "dun"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].title").value("Dune"));
+  }
 
-        mockMvc.perform(get("/books").param("title", "dune").param("author", "frank"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("Dune"))
-                .andExpect(jsonPath("$[0].author").value("Frank Herbert"));
-    }
+  @Test
+  void filterBooksByTitleAndAuthorUsesAndCondition() throws Exception {
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune", "author", "Frank Herbert"))));
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune Messiah", "author", "Brian Herbert"))));
 
-    @Test
-    void emptyFiltersAreTreatedAsAbsent() throws Exception {
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "1984", "author", "George Orwell"))));
+    mockMvc
+        .perform(get("/books").param("title", "dune").param("author", "frank"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].title").value("Dune"))
+        .andExpect(jsonPath("$[0].author").value("Frank Herbert"));
+  }
 
-        mockMvc.perform(get("/books").param("title", "").param("author", " "))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
-    }
+  @Test
+  void emptyFiltersAreTreatedAsAbsent() throws Exception {
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune", "author", "Frank Herbert"))));
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "1984", "author", "George Orwell"))));
 
-    @Test
-    void filterBooksByAuthorOnly() throws Exception {
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))));
-        mockMvc.perform(post("/books").contentType("application/json")
-                .content(objectMapper.writeValueAsString(Map.of("title", "1984", "author", "George Orwell"))));
+    mockMvc
+        .perform(get("/books").param("title", "").param("author", " "))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2));
+  }
 
-        mockMvc.perform(get("/books").param("author", "orwell"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].author").value("George Orwell"));
-    }
+  @Test
+  void filterBooksByAuthorOnly() throws Exception {
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "Dune", "author", "Frank Herbert"))));
+    mockMvc.perform(
+        post("/books")
+            .contentType("application/json")
+            .content(
+                objectMapper.writeValueAsString(
+                    Map.of("title", "1984", "author", "George Orwell"))));
 
-    @Test
-    void filterBooksWithNoMatchReturnsEmptyArray() throws Exception {
-        mockMvc.perform(get("/books").param("title", "nonexistent"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
-    }
+    mockMvc
+        .perform(get("/books").param("author", "orwell"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].author").value("George Orwell"));
+  }
 
-    @Test
-    void updateBookAuthorReturns200() throws Exception {
-        String response = mockMvc.perform(post("/books").contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                .andReturn().getResponse().getContentAsString();
-        String id = objectMapper.readTree(response).get("id").asText();
+  @Test
+  void filterBooksWithNoMatchReturnsEmptyArray() throws Exception {
+    mockMvc
+        .perform(get("/books").param("title", "nonexistent"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
 
-        mockMvc.perform(put("/books/{id}", id)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("author", "New Author"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.author").value("New Author"))
-                .andExpect(jsonPath("$.title").value("Dune"));
-    }
+  @Test
+  void updateBookAuthorReturns200() throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/books")
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            Map.of("title", "Dune", "author", "Frank Herbert"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = objectMapper.readTree(response).get("id").asText();
 
-    @Test
-    void updateBookIgnoresTitleInRequestBody() throws Exception {
-        String response = mockMvc.perform(post("/books").contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                .andReturn().getResponse().getContentAsString();
-        String id = objectMapper.readTree(response).get("id").asText();
+    mockMvc
+        .perform(
+            put("/books/{id}", id)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("author", "New Author"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.author").value("New Author"))
+        .andExpect(jsonPath("$.title").value("Dune"));
+  }
 
-        mockMvc.perform(put("/books/{id}", id)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "Renamed", "author", "New Author"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Dune"))
-                .andExpect(jsonPath("$.author").value("New Author"));
-    }
+  @Test
+  void updateBookIgnoresTitleInRequestBody() throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/books")
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            Map.of("title", "Dune", "author", "Frank Herbert"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = objectMapper.readTree(response).get("id").asText();
 
-    @Test
-    void updateBookWithBlankAuthorReturns400() throws Exception {
-        String response = mockMvc.perform(post("/books").contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                .andReturn().getResponse().getContentAsString();
-        String id = objectMapper.readTree(response).get("id").asText();
+    mockMvc
+        .perform(
+            put("/books/{id}", id)
+                .contentType("application/json")
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("title", "Renamed", "author", "New Author"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("Dune"))
+        .andExpect(jsonPath("$.author").value("New Author"));
+  }
 
-        mockMvc.perform(put("/books/{id}", id)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("author", ""))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("please check the request payload"));
-    }
+  @Test
+  void updateBookWithBlankAuthorReturns400() throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/books")
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            Map.of("title", "Dune", "author", "Frank Herbert"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = objectMapper.readTree(response).get("id").asText();
 
-        @Test
-        void updateBookWithOversizedAuthorReturns400() throws Exception {
-                String response = mockMvc.perform(post("/books").contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                                .andReturn().getResponse().getContentAsString();
-                String id = objectMapper.readTree(response).get("id").asText();
+    mockMvc
+        .perform(
+            put("/books/{id}", id)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("author", ""))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-                mockMvc.perform(put("/books/{id}", id)
-                                                .contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("author", "a".repeat(256)))))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").value("please check the request payload"));
-        }
+  @Test
+  void updateNonexistentBookWithBlankAuthorReturns400() throws Exception {
+    mockMvc
+        .perform(
+            put("/books/{id}", "missing-id")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("author", " "))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-        @Test
-        void updateBookWithMissingAuthorReturns400() throws Exception {
-                String response = mockMvc.perform(post("/books").contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                                .andReturn().getResponse().getContentAsString();
-                String id = objectMapper.readTree(response).get("id").asText();
+  @Test
+  void updateBookWithOversizedAuthorReturns400() throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/books")
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            Map.of("title", "Dune", "author", "Frank Herbert"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = objectMapper.readTree(response).get("id").asText();
 
-                mockMvc.perform(put("/books/{id}", id)
-                                                .contentType("application/json")
-                                                .content(objectMapper.writeValueAsString(Map.of())))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").value("please check the request payload"));
-        }
+    mockMvc
+        .perform(
+            put("/books/{id}", id)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("author", "a".repeat(256)))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-    @Test
-    void updateMissingBookReturns404() throws Exception {
-        mockMvc.perform(put("/books/{id}", "missing-id")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("author", "New Author"))))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("no book present"));
-    }
+  @Test
+  void updateBookWithMissingAuthorReturns400() throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/books")
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            Map.of("title", "Dune", "author", "Frank Herbert"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = objectMapper.readTree(response).get("id").asText();
 
-    @Test
-    void deleteBookReturns204() throws Exception {
-        String response = mockMvc.perform(post("/books").contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("title", "Dune", "author", "Frank Herbert"))))
-                .andReturn().getResponse().getContentAsString();
-        String id = objectMapper.readTree(response).get("id").asText();
+    mockMvc
+        .perform(
+            put("/books/{id}", id)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("please check the request payload"));
+  }
 
-        mockMvc.perform(delete("/books/{id}", id))
-                .andExpect(status().isNoContent());
-    }
+  @Test
+  void updateMissingBookReturns404() throws Exception {
+    mockMvc
+        .perform(
+            put("/books/{id}", "missing-id")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(Map.of("author", "New Author"))))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("no book present"));
+  }
 
-    @Test
-    void deleteMissingBookReturns404() throws Exception {
-        mockMvc.perform(delete("/books/{id}", "missing-id"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("no book present"));
-    }
+  @Test
+  void deleteBookReturns204() throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/books")
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            Map.of("title", "Dune", "author", "Frank Herbert"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = objectMapper.readTree(response).get("id").asText();
+
+    mockMvc.perform(delete("/books/{id}", id)).andExpect(status().isNoContent());
+  }
+
+  @Test
+  void deleteMissingBookReturns404() throws Exception {
+    mockMvc
+        .perform(delete("/books/{id}", "missing-id"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("no book present"));
+  }
 }

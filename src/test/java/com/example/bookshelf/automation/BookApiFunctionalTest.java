@@ -1,9 +1,16 @@
 package com.example.bookshelf.automation;
 
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+
 import com.example.bookshelf.repository.BookRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import java.time.Duration;
+import java.util.Map;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -21,162 +28,162 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.time.Duration;
-import java.util.Map;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-
 /**
- * Black-box functional tests driving the running application over real HTTP (REST Assured)
- * and through the browser UI (Selenium), exercising full user journeys end to end.
+ * Black-box functional tests driving the running application over real HTTP (REST Assured) and
+ * through the browser UI (Selenium), exercising full user journeys end to end.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class BookApiFunctionalTest extends AbstractTestNGSpringContextTests {
 
-    @LocalServerPort
-    private int port;
+  @LocalServerPort private int port;
 
-    @Autowired
-    private BookRepository bookRepository;
+  @Autowired private BookRepository bookRepository;
 
-    private WebDriver driver;
+  private WebDriver driver;
 
-    @BeforeClass
-    void setUpClass() {
-        WebDriverManager.chromedriver().setup();
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--window-size=1280,800");
-        driver = new ChromeDriver(options);
+  @BeforeClass
+  void setUpClass() {
+    WebDriverManager.chromedriver().setup();
+    ChromeOptions options = new ChromeOptions();
+    options.addArguments("--window-size=1280,800");
+    driver = new ChromeDriver(options);
+  }
+
+  @AfterClass
+  void tearDownClass() {
+    if (driver != null) {
+      driver.quit();
     }
+  }
 
-    @AfterClass
-    void tearDownClass() {
-        if (driver != null) {
-            driver.quit();
-        }
-    }
+  @BeforeMethod
+  void setUp() {
+    RestAssured.baseURI = "http://localhost:" + port;
+    bookRepository.deleteAll();
+  }
 
-    @BeforeMethod
-    void setUp() {
-        RestAssured.baseURI = "http://localhost:" + port;
-        bookRepository.deleteAll();
-    }
+  private String baseUrl() {
+    return "http://localhost:" + port;
+  }
 
-    private String baseUrl() {
-        return "http://localhost:" + port;
-    }
-
-    @Test
-    void fullLifecycle_createFilterUpdateDelete() {
-        String id = given()
-                .contentType(ContentType.JSON)
-                .body(Map.of("title", "Dune", "author", "Frank Herbert"))
-                .when().post("/books")
-                .then().statusCode(201)
-                .body("title", equalTo("Dune"))
-                .extract().path("id");
-
+  @Test
+  void fullLifecycle_createFilterUpdateDelete() {
+    String id =
         given()
-                .queryParam("title", "dun")
-                .queryParam("author", "herbert")
-                .when().get("/books")
-                .then().statusCode(200)
-                .body("$", hasSize(1));
+            .contentType(ContentType.JSON)
+            .body(Map.of("title", "Dune", "author", "Frank Herbert"))
+            .when()
+            .post("/books")
+            .then()
+            .statusCode(201)
+            .body("title", equalTo("Dune"))
+            .extract()
+            .path("id");
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(Map.of("author", "New Author"))
-                .when().put("/books/{id}", id)
-                .then().statusCode(200)
-                .body("author", equalTo("New Author"))
-                .body("title", equalTo("Dune"));
+    given()
+        .queryParam("title", "dun")
+        .queryParam("author", "herbert")
+        .when()
+        .get("/books")
+        .then()
+        .statusCode(200)
+        .body("$", hasSize(1));
 
-        when()
-                .get("/books")
-                .then().statusCode(200)
-                .body("[0].author", equalTo("New Author"));
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("author", "New Author"))
+        .when()
+        .put("/books/{id}", id)
+        .then()
+        .statusCode(200)
+        .body("author", equalTo("New Author"))
+        .body("title", equalTo("Dune"));
 
-        when()
-                .delete("/books/{id}", id)
-                .then().statusCode(204);
+    when().get("/books").then().statusCode(200).body("[0].author", equalTo("New Author"));
 
-        when()
-                .get("/books")
-                .then().statusCode(200)
-                .body("$", hasSize(0));
-    }
+    when().delete("/books/{id}", id).then().statusCode(204);
 
-    @Test
-    void creatingDuplicateBookReturns400WithMessage() {
-        given()
-                .contentType(ContentType.JSON)
-                .body(Map.of("title", "1984", "author", "George Orwell"))
-                .when().post("/books")
-                .then().statusCode(201);
+    when().get("/books").then().statusCode(200).body("$", hasSize(0));
+  }
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(Map.of("title", "1984", "author", "George Orwell"))
-                .when().post("/books")
-                .then().statusCode(400)
-                .body("message", equalTo("record already exist"));
-    }
+  @Test
+  void creatingDuplicateBookReturns400WithMessage() {
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("title", "1984", "author", "George Orwell"))
+        .when()
+        .post("/books")
+        .then()
+        .statusCode(201);
 
-    @Test
-    void creatingInvalidBookReturns400WithMessage() {
-        given()
-                .contentType(ContentType.JSON)
-                .body(Map.of("title", "", "author", "George Orwell"))
-                .when().post("/books")
-                .then().statusCode(400)
-                .body("message", equalTo("please check the request payload"));
-    }
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("title", "1984", "author", "George Orwell"))
+        .when()
+        .post("/books")
+        .then()
+        .statusCode(400)
+        .body("message", equalTo("record already exist"));
+  }
 
-    @Test
-    void updatingMissingBookReturns404WithMessage() {
-        given()
-                .contentType(ContentType.JSON)
-                .body(Map.of("author", "New Author"))
-                .when().put("/books/does-not-exist")
-                .then().statusCode(404)
-                .body("message", equalTo("no book present"));
-    }
+  @Test
+  void creatingInvalidBookReturns400WithMessage() {
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("title", "", "author", "George Orwell"))
+        .when()
+        .post("/books")
+        .then()
+        .statusCode(400)
+        .body("message", equalTo("please check the request payload"));
+  }
 
-    @Test
-    void deletingMissingBookReturns404WithMessage() {
-        when()
-                .delete("/books/does-not-exist")
-                .then().statusCode(404)
-                .body("message", equalTo("no book present"));
-    }
+  @Test
+  void updatingMissingBookReturns404WithMessage() {
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("author", "New Author"))
+        .when()
+        .put("/books/does-not-exist")
+        .then()
+        .statusCode(404)
+        .body("message", equalTo("no book present"));
+  }
 
-    @Test
-    void filteringWithNoMatchReturnsEmptyArray() {
-        given()
-                .queryParam("title", "nonexistent")
-                .when().get("/books")
-                .then().statusCode(200)
-                .body("$", hasSize(0));
-    }
+  @Test
+  void deletingMissingBookReturns404WithMessage() {
+    when()
+        .delete("/books/does-not-exist")
+        .then()
+        .statusCode(404)
+        .body("message", equalTo("no book present"));
+  }
 
-    @Test
-    void uiAddBookThroughFormUpdatesShelfAndCount() {
-        driver.get(baseUrl() + "/index.html");
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+  @Test
+  void filteringWithNoMatchReturnsEmptyArray() {
+    given()
+        .queryParam("title", "nonexistent")
+        .when()
+        .get("/books")
+        .then()
+        .statusCode(200)
+        .body("$", hasSize(0));
+  }
 
-        driver.findElement(By.id("title")).sendKeys("Dune");
-        driver.findElement(By.id("author")).sendKeys("Frank Herbert");
-        driver.findElement(By.cssSelector("#book-form button[type='submit']")).click();
+  @Test
+  void uiAddBookThroughFormUpdatesShelfAndCount() {
+    driver.get(baseUrl() + "/index.html");
+    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
-        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("book-count"), "1"));
+    driver.findElement(By.id("title")).sendKeys("Dune");
+    driver.findElement(By.id("author")).sendKeys("Frank Herbert");
+    driver.findElement(By.cssSelector("#book-form button[type='submit']")).click();
 
-        WebElement bookTitle = driver.findElement(By.cssSelector(".book-title"));
-        WebElement bookAuthor = driver.findElement(By.cssSelector(".book-author"));
-        Assert.assertEquals(bookTitle.getText(), "Dune");
-        Assert.assertEquals(bookAuthor.getText(), "Frank Herbert");
-    }
+    wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("book-count"), "1"));
+
+    WebElement bookTitle = driver.findElement(By.cssSelector(".book-title"));
+    WebElement bookAuthor = driver.findElement(By.cssSelector(".book-author"));
+    Assert.assertEquals(bookTitle.getText(), "Dune");
+    Assert.assertEquals(bookAuthor.getText(), "Frank Herbert");
+  }
 }
-
