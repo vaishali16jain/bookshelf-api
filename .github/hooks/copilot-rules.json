@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/pre-tools-used.sh",
+        "powershell": ".\\.github\\hooks\\scripts\\pre-tools-used.ps1",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/post-tools-used.sh ${createdFilePath}",
+        "powershell": ".\\.github\\hooks\\scripts\\post-tools-used.ps1 ${createdFilePath}",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
